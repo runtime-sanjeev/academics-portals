@@ -66,7 +66,7 @@ function DefaultLayout() {
         </header>  
         <Navbaar />      
       </div>                 
-      <main className="mt-15">     
+      <main className="mt-5">     
       <Outlet />                   
       </main>       
     </div>      

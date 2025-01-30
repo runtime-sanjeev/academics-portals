@@ -3,23 +3,19 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-
-// Route::post('login', [AuthController::class, 'login']);
-// Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
-
-// Route::post('dashboard', [AuthController::class, 'dashboard']);
-// Route::post('logout', [AuthController::class, 'logout']);
-
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GetStudentController;
 
 Route::post('login', [AuthController::class, 'login']);
-Route::post('dashboard', [AuthController::class, 'dashboard']);
+Route::post('getCounts', [DashboardController::class, 'studentCounts']); 
+Route::post('getStudent', [GetStudentController::class, 'getStudent']);
+Route::get('/student/view/{id}', [StudentController::class, 'viewStudent'])->name('student.view');
+Route::get('/student/edit/{id}', [StudentController::class, 'editStudent'])->name('student.edit');
+Route::delete('/student/delete/{id}', [StudentController::class, 'deleteStudent'])->name('student.delete');
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', function (Request $request) {
-            return $request->user();
-        });   
+        return $request->user();
+    });    
     Route::get('logout', [AuthController::class, 'logout']);
-    // return $request->user();
 });

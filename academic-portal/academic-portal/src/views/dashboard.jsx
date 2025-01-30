@@ -1,15 +1,105 @@
 import CryptoJS from "crypto-js";
-const encryptionKey = import.meta.env.VITE_APP_KEY;// Use the same key as in ContextProvider
-import Footer from '../components/Footer'
-import '../assets/css/dashboard.css'
-// import Navbaar from "../components/Navbaar";
+import axiosClient from '../axiosClient';
+import { useEffect, useState } from 'react';
+const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in ContextProvider
+import Footer from '../components/Footer';
+import '../assets/css/dashboard.css';
+import { useNavigate } from "react-router-dom";
 
-function dashboard() {
+function Dashboard() {
   const encryptedUserData = sessionStorage.getItem("USER_DATA");
   const user = encryptedUserData
     ? JSON.parse(CryptoJS.AES.decrypt(encryptedUserData, encryptionKey).toString(CryptoJS.enc.Utf8))
     : null;
-    let FRONTEND_URL="http://localhost:5173";
+  let FRONTEND_URL = "http://localhost:5173";
+  const [countsReg, setCountsReg] = useState(0);
+  const [countsPvt, setCountsPvt] = useState(0);
+  const [countsExReg, setCountsExReg] = useState(0);
+  const [challanCountsReg, setchallanCountsReg] = useState(0);
+  const [challanCountsPvt, setchallanCountsPvt] = useState(0);
+  const [challanCountsExReg, setchallanCountsExReg] = useState(0);
+  const [students, setStudents] = useState([]);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const navigate = useNavigate();
+  const [deleteId, setDeleteId] = useState(null);
+
+
+  const handleDelete = (id) => {
+    setDeleteId(id);
+  };
+
+  // Confirm delete action
+  const confirmDelete = () => {
+    if (deleteId) {
+      console.log("Deleting student with ID:", deleteId);
+      // Perform delete API call here
+      setDeleteId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.school_code) {
+      const controller = new AbortController(); // Prevent memory leaks
+
+      axiosClient.post('getCounts', { school_code: user.school_code }, { signal: controller.signal })
+        .then(response => {
+          console.log("API Response:", response.data);
+          const totalCounts = response.data.studentCounts.total;
+          const processedCounts = response.data.studentCounts.processed;
+
+          setCountsReg(totalCounts.REGULAR || 0);
+          setCountsPvt(totalCounts.PRIVATE || 0);
+          setCountsExReg(totalCounts["EX-REGULAR"] || 0);
+
+          setchallanCountsReg(processedCounts.REGULAR.processed || 0);
+          setchallanCountsPvt(processedCounts.PRIVATE.processed || 0);
+          setchallanCountsExReg(processedCounts["EX-REGULAR"].processed || 0);
+        })
+        .catch(error => {
+          if (error.name !== 'AbortError') {
+            console.error('Error fetching student counts:', error);
+          }
+        });
+
+      return () => controller.abort(); // Cleanup request if component unmounts
+    }
+  }, [user?.school_code]);
+
+  const fetchStudents = (page = 1) => {
+    if (!user?.school_code) return;
+
+    const controller = new AbortController();
+    axiosClient
+      .post(
+        "getStudent",
+        { school_code: user.school_code, search, per_page: 10, page }, 
+        { signal: controller.signal }
+      )
+      .then((response) => {
+        setStudents(response.data.students.data || []); // Access students data correctly
+        setCurrentPage(response.data.students.current_page);
+        setLastPage(response.data.students.last_page);
+      })
+      .catch((error) => {
+        console.error("Error fetching students:", error);
+      });
+
+    return () => controller.abort(); // Cleanup
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchStudents(1); // Reset to page 1 on search
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [search]);
     
   return (
     <div>      
@@ -65,13 +155,14 @@ function dashboard() {
           No. of Candidates Added on the Portal
         </td>
         <td className="border border-gray-300 p-2 text-gray-700 text-sm leading-none">
-          100
+          {countsReg}
         </td>
         <td className="border border-gray-300 p-2 text-gray-700 text-sm leading-none">
-          50
+          {countsPvt}
+          
         </td>
         <td className="border border-gray-300 p-2 text-gray-700 text-sm leading-none">
-         80
+         {countsExReg}
         </td>
       </tr>
       <tr>
@@ -79,13 +170,13 @@ function dashboard() {
           No. of Candidates Submitted for Challan Generation
         </td>
         <td className="border border-gray-300 p-2 text-gray-700 text-sm leading-none">
-          80
+          {challanCountsReg}
         </td>
         <td className="border border-gray-300 p-2 text-gray-700 text-sm leading-none">
-          30
+          {challanCountsPvt}
         </td>
         <td className="border border-gray-300 p-2 text-gray-700 text-sm leading-none">
-          70
+          {challanCountsExReg}
         </td>
       </tr>
     </tbody>
@@ -102,12 +193,140 @@ function dashboard() {
   </table>
 </div>
 
-  
-    </div>
+<div className="notes-logo">
+    <img src={`${FRONTEND_URL}/src/assets/images/notes-logo.png`} />    
+    <p>List of Candidates Enrolled by the Institution.</p>
+</div>
+<div className="container mx-auto mt-10 ">
+         <div className="flex justify-end items-end">
+          <input
+            type="text"
+            placeholder="Search..."
+            className="border rounded-lg p-2 mb-4 w-40 "
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+         </div>
+  <table className="table-auto border-collapse border border-gray-300 w-full text-left">
+    <thead>
+      <tr>
+        <th className="border border-gray-300 p-2 bg-gray-100 text-sm leading-none">
+          Sr. No.
+        </th>
+        <th className="border border-gray-300 p-2 bg-gray-100 text-sm leading-none">
+          Student Code
+        </th>
+        <th className="border border-gray-300 p-2 bg-gray-100 text-sm leading-none">
+          Student Name
+        </th>
+        <th className="border border-gray-300 p-2 bg-gray-100 text-sm leading-none">
+          Student Category
+        </th>
+        <th className="border border-gray-300 p-2 bg-gray-100 text-sm leading-none">
+          Action
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+          {students.length > 0 ? (
+            students.map((student, index) => (
+              <tr key={student.id}>
+                <td className="border border-gray-300 p-2 text-sm">{index + 1 + (currentPage - 1) * 10}</td>
+                <td className="border border-gray-300 p-2 text-sm">{student.student_code}</td>
+                <td className="border border-gray-300 p-2 text-sm">{student.student_name}</td>
+                <td className="border border-gray-300 p-2 text-sm">{student.student_category}</td>
+                <td className="border border-gray-300 p-2 p-2 flex justify-center gap-1.5">
+                    {/* View Button */}
+                    {student.actions.view && (
+                      <button
+                        onClick={() => navigate(student.actions.view)}
+                        className="px-5 py-2.5 text-xs font-semibold text-white bg-blue-500 rounded-md shadow-md hover:bg-blue-600 transition active:scale-95"
+                      >
+                        View
+                      </button>
+                    )}
+
+                    {/* Edit Button */}
+                    {student.actions.edit && (
+                      <button
+                        onClick={() => navigate('/student/edit/' + student.id)}
+                        className="px-5 py-2.5 text-xs font-semibold text-white bg-green-500 rounded-md shadow-md hover:bg-green-600 transition active:scale-95"
+                      >
+                        Edit
+                      </button>
+                    )}
+
+                    {/* Delete Button */}
+                    {student.actions.delete && (
+                      <button
+                        onClick={() => handleDelete(student.id)}
+                        className="px-5 py-2.5 text-xs font-semibold text-white bg-red-500 rounded-md shadow-md hover:bg-red-600 transition active:scale-95"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
+
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" className="border border-gray-300 p-2 text-center text-sm">
+                No students found.
+              </td>
+            </tr>
+          )}
+        </tbody>
+  </table>
+  <div className="mt-4 mb-4 flex justify-end items-center space-x-3">
+      <button
+        className="px-4 py-2 border rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all duration-200 ease-in-out disabled:opacity-50"
+        onClick={() => fetchStudents(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        Previous
+      </button>
+      <span className="px-3 py-1 text-sm text-gray-700 font-medium">
+        Page {currentPage} of {lastPage}
+      </span>
+      <button
+        className="px-4 py-2 border rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all duration-200 ease-in-out disabled:opacity-50"
+        onClick={() => fetchStudents(currentPage + 1)}
+        disabled={currentPage === lastPage}
+      >
+        Next
+      </button>
+</div>
+
+{deleteId && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <p className="text-lg font-semibold">Are you sure you want to delete this record?</p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 text-gray-700 bg-gray-300 rounded-lg hover:bg-gray-400 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+</div>
+
+  </div>
     <Footer />
-    </div>
+  </div>
 
   )
 }
 
-export default dashboard
+export default Dashboard

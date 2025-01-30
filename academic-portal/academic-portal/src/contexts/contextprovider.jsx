@@ -49,8 +49,8 @@ export const ContextProvider = ({ children }) => {
 
   // Effect to debug state initialization
   useEffect(() => {
-    console.log("User initialized:", user);
-    console.log("Token initialized:", token);
+    // console.log("User initialized:", user);
+    // console.log("Token initialized:", token);
   }, [user, token]);
 
   return (
