@@ -5,6 +5,7 @@ import Dashboard from './views/dashboard';
 import DefaultLayout from './components/DefaultLayout';
 import GuestLayouts from './components/GuestLayouts';
 
+
 const router = createBrowserRouter([
     {
         path: '/',
@@ -15,9 +16,9 @@ const router = createBrowserRouter([
                 element: <Dashboard />
                 },
                 {
-                    path: '/student/edit/:id',
+                    path: '/student/:encryptedId/:encryptedAct',
                     element: <Student />
-                    },
+                },
         ]      
     },
     {

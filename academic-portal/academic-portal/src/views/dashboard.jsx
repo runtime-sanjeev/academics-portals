@@ -24,7 +24,23 @@ function Dashboard() {
   const [lastPage, setLastPage] = useState(1);
   const navigate = useNavigate();
   const [deleteId, setDeleteId] = useState(null);
+  const sanitizeForUrl = (str) => str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
+// Handle edit action
+
+const handleEdit = (id, act ) => {
+  if (!id || !act) {
+    console.log("Invalid act or id:", { act, id });
+    return; // Stop execution if values are missing
+  }
+  const encryptedId = CryptoJS.AES.encrypt(id.toString(), encryptionKey).toString();
+  const urlSafeEncryptedId = sanitizeForUrl(encryptedId);
+  const encryptedAct = CryptoJS.AES.encrypt(act.toString(), encryptionKey).toString();  
+  const urlSafeEncryptedAct = sanitizeForUrl(encryptedAct);
+
+
+  navigate(`/student/${urlSafeEncryptedAct}/${urlSafeEncryptedId}`);
+};
 
   const handleDelete = (id) => {
     setDeleteId(id);
@@ -41,52 +57,64 @@ function Dashboard() {
 
   useEffect(() => {
     if (user?.school_code) {
-      const controller = new AbortController(); // Prevent memory leaks
+      // const controller = new AbortController(); // Prevent memory leaks
+      let isMounted = true;
 
-      axiosClient.post('getCounts', { school_code: user.school_code }, { signal: controller.signal })
+      axiosClient.post('getCounts', { school_code: user.school_code })
         .then(response => {
-          console.log("API Response:", response.data);
-          const totalCounts = response.data.studentCounts.total;
-          const processedCounts = response.data.studentCounts.processed;
+          // console.log("API Response:", response.data);
+          if (isMounted) {
+            const totalCounts = response.data.studentCounts.total;
+            const processedCounts = response.data.studentCounts.processed;
 
-          setCountsReg(totalCounts.REGULAR || 0);
-          setCountsPvt(totalCounts.PRIVATE || 0);
-          setCountsExReg(totalCounts["EX-REGULAR"] || 0);
+            setCountsReg(totalCounts.REGULAR || 0);
+            setCountsPvt(totalCounts.PRIVATE || 0);
+            setCountsExReg(totalCounts["EX-REGULAR"] || 0);
 
-          setchallanCountsReg(processedCounts.REGULAR.processed || 0);
-          setchallanCountsPvt(processedCounts.PRIVATE.processed || 0);
-          setchallanCountsExReg(processedCounts["EX-REGULAR"].processed || 0);
+            setchallanCountsReg(processedCounts.REGULAR.processed || 0);
+            setchallanCountsPvt(processedCounts.PRIVATE.processed || 0);
+            setchallanCountsExReg(processedCounts["EX-REGULAR"].processed || 0);
+          }
+          
         })
         .catch(error => {
-          if (error.name !== 'AbortError') {
+          if (isMounted) {
             console.error('Error fetching student counts:', error);
           }
         });
 
-      return () => controller.abort(); // Cleanup request if component unmounts
+        return () => {
+          isMounted = false;
+        };// Cleanup request if component unmounts
     }
   }, [user?.school_code]);
 
   const fetchStudents = (page = 1) => {
     if (!user?.school_code) return;
 
-    const controller = new AbortController();
+    let isMounted = true;
     axiosClient
       .post(
         "getStudent",
-        { school_code: user.school_code, search, per_page: 10, page }, 
-        { signal: controller.signal }
+        { school_code: user.school_code, search, per_page: 10, page }
       )
       .then((response) => {
-        setStudents(response.data.students.data || []); // Access students data correctly
-        setCurrentPage(response.data.students.current_page);
-        setLastPage(response.data.students.last_page);
+        if (isMounted) {
+          setStudents(response.data.students.data || []); // Access students data correctly
+          setCurrentPage(response.data.students.current_page);
+          setLastPage(response.data.students.last_page);
+        }
+        
       })
       .catch((error) => {
+        if (isMounted) {
         console.error("Error fetching students:", error);
+        }
       });
 
-    return () => controller.abort(); // Cleanup
+      return () => {
+        isMounted = false;
+      };// Cleanup request if component unmounts
   };
 
   useEffect(() => {
@@ -249,11 +277,11 @@ function Dashboard() {
                     {/* Edit Button */}
                     {student.actions.edit && (
                       <button
-                        onClick={() => navigate('/student/edit/' + student.id)}
-                        className="px-5 py-2.5 text-xs font-semibold text-white bg-green-500 rounded-md shadow-md hover:bg-green-600 transition active:scale-95"
-                      >
-                        Edit
-                      </button>
+                      onClick={() => handleEdit('edit', student.id)}
+                      className="px-5 py-2.5 text-xs font-semibold text-white bg-green-500 rounded-md shadow-md hover:bg-green-600 transition active:scale-95"
+                    >
+                      Edit
+                    </button>
                     )}
 
                     {/* Delete Button */}
@@ -278,25 +306,40 @@ function Dashboard() {
           )}
         </tbody>
   </table>
-  <div className="mt-4 mb-4 flex justify-end items-center space-x-3">
-      <button
-        className="px-4 py-2 border rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all duration-200 ease-in-out disabled:opacity-50"
-        onClick={() => fetchStudents(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
-        Previous
-      </button>
-      <span className="px-3 py-1 text-sm text-gray-700 font-medium">
-        Page {currentPage} of {lastPage}
-      </span>
-      <button
-        className="px-4 py-2 border rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all duration-200 ease-in-out disabled:opacity-50"
-        onClick={() => fetchStudents(currentPage + 1)}
-        disabled={currentPage === lastPage}
-      >
-        Next
-      </button>
-</div>
+        <div className="mt-4 mb-4 flex justify-end items-center space-x-3">
+        <button
+          className="px-4 py-2 border rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all duration-200 ease-in-out disabled:opacity-50"
+          onClick={() => fetchStudents(1)}
+          disabled={currentPage === 1}
+        >
+          First
+        </button>
+        <button
+          className="px-4 py-2 border rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all duration-200 ease-in-out disabled:opacity-50"
+          onClick={() => fetchStudents(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+        <span className="px-3 py-1 text-sm text-gray-700 font-medium">
+          Page {currentPage} of {lastPage}
+        </span>
+        <button
+          className="px-4 py-2 border rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all duration-200 ease-in-out disabled:opacity-50"
+          onClick={() => fetchStudents(currentPage + 1)}
+          disabled={currentPage === lastPage}
+        >
+          Next
+        </button>
+        <button
+          className="px-4 py-2 border rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all duration-200 ease-in-out disabled:opacity-50"
+          onClick={() => fetchStudents(lastPage)}
+          disabled={currentPage === lastPage}
+        >
+          Last
+        </button>
+      </div>
+
 
 {deleteId && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">

@@ -1,0 +1,8 @@
+.required-field::before {
+    content: "*";
+    color: red;
+  }
+  
+.stud-communication {padding-top: 0;border-bottom: solid 2px #217ed6}
+.stud-communication img {display: inline-block;}
+.stud-communication p {font-size: 24px;display: inline-block; margin-left:20px;font-family: 'Roboto',sans-serif;color: #03335f;}
