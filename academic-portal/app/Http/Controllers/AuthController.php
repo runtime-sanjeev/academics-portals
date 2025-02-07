@@ -8,7 +8,7 @@ use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-
+use Illuminate\Support\Facades\Cookie;
 class AuthController extends Controller
 {
 
@@ -78,7 +78,6 @@ class AuthController extends Controller
     /*   Logout Start */
 
     public function logout(Request $request){
-        // Get the user
         $user = $request->user();
         $user->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out successfully'], 200);

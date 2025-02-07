@@ -4,13 +4,19 @@ import { useEffect, useState } from 'react';
 const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in ContextProvider
 import Footer from '../components/Footer';
 import '../assets/css/dashboard.css';
+import { useStateContext } from "../contexts/contextprovider";
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
-  const encryptedUserData = sessionStorage.getItem("USER_DATA");
-  const user = encryptedUserData
-    ? JSON.parse(CryptoJS.AES.decrypt(encryptedUserData, encryptionKey).toString(CryptoJS.enc.Utf8))
-    : null;
+
+  const { user, token } = useStateContext(); // Retrieve user and token from context
+
+
+
+  // const encryptedUserData = sessionStorage.getItem("USER_DATA");
+  // const user = encryptedUserData
+  //   ? JSON.parse(CryptoJS.AES.decrypt(encryptedUserData, encryptionKey).toString(CryptoJS.enc.Utf8))
+  //   : null;
   let FRONTEND_URL = "http://localhost:5173";
   const [countsReg, setCountsReg] = useState(0);
   const [countsPvt, setCountsPvt] = useState(0);
@@ -26,6 +32,20 @@ function Dashboard() {
   const [deleteId, setDeleteId] = useState(null);
   const sanitizeForUrl = (str) => str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
+
+  useEffect(() => {
+    if (!user) {
+      // Redirect to login if user is not logged in
+      navigate("/login");
+      // Do something with user data
+      // console.log("Logged in user:", user);
+    }
+    if (!token) {
+      navigate("/login");
+      // Do something with the token, like making API calls
+      console.log("Current Token:", token);
+    }
+  }, [user, token, navigate]);
 // Handle edit action
 
 const handleEdit = (id, act ) => {
@@ -263,7 +283,7 @@ const handleEdit = (id, act ) => {
                 <td className="border border-gray-300 p-2 text-sm">{student.student_code}</td>
                 <td className="border border-gray-300 p-2 text-sm">{student.student_name}</td>
                 <td className="border border-gray-300 p-2 text-sm">{student.student_category}</td>
-                <td className="border border-gray-300 p-2 p-2 flex justify-center gap-1.5">
+                <td className="border border-gray-300 p-2  flex justify-center gap-1.5">
                     {/* View Button */}
                     {student.actions.view && (
                       <button

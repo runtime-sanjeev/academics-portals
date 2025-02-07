@@ -1,89 +1,184 @@
 import CryptoJS from "crypto-js"
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import '../assets/css/student.css'
+import axiosClient from '../axiosClient';
 const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in ContextProvider
+import { useStateContext } from "../contexts/contextprovider";
 
-   const encryptedUserData = sessionStorage.getItem("USER_DATA");
-   const user = encryptedUserData
-     ? JSON.parse(CryptoJS.AES.decrypt(encryptedUserData, encryptionKey).toString(CryptoJS.enc.Utf8))
-     : null;
-
- function Student() {
-        const [formData, setFormData] = useState({
+   
+    //  alert(user);
+    
+ function Student() {  
+  const { user, token } = useStateContext(); // Retrieve user and token from context
+  const navigate = useNavigate();
+        const [districts, setDistricts] = useState([]);
+        const [blocks, setBlocks] = useState([]);
+        const [selectedStudents, setselectedStudents] = useState({
           student_name: "",
-          student_dob: "",
+          birth_date: "",
           student_gender: "M",
           student_disability: "NONE", // Default selected disability is "NONE"
           student_divyang_certificate: null,
           student_caste: "GENERAL",
           student_religion: "HINDUISM",
           student_nationality: "INDIAN",
-          student_aadhar: "",
+          aadhar: "",
           student_category: "REGULAR",
           student_area: "RURAL",
+          address_line1: "",
+          address_line2: "",
+          present_block: "",
+          present_block_code: "",
+          present_district: "",
+          present_district_code: "",
+          present_state: "",
+          present_pin: "",
+          mobile_no: "",
+          student_email: "",
+          roll_number: "",
+          section: "",
+          student_medium: "HINDI",
+          subject_mil_code: "",
+          subject_lieu_code: "",
+          subject_elective_code: "",
         });
-
-        let FRONTEND_URL = "http://localhost:5173";
-
-        // const AadharInput = ({ formData, setFormData }) => {
-          const [aadhar, setAadhar] = useState({
-            part1: "",
-            part2: "",
-            part3: "",
-          });
-
-          const handleAadharChange = (e, part) => {
-            let value = e.target.value.replace(/\D/g, "").slice(0, 4); // Allow only numbers, max 4 digits
-            setAadhar({ ...aadhar, [part]: value });
         
-            if (value.length === 4) {
-              if (part === "part1") document.getElementById("aadhar-part2").focus();
-              else if (part === "part2") document.getElementById("aadhar-part3").focus();
-            }
-        
-            // Merge all parts and store in formData
-            const updatedAadhar = { ...aadhar, [part]: value };
-            const mergedAadhar = updatedAadhar.part1 + updatedAadhar.part2 + updatedAadhar.part3;
-        
-            if (mergedAadhar.length === 12) {
-              setFormData({ ...formData, student_aadhar: mergedAadhar });
-            }
-          };
 
-        const { encryptedAct, encryptedId } = useParams();
-        const studAct = CryptoJS.AES.decrypt(encryptedAct.replace(/-/g, "+").replace(/_/g, "/"), encryptionKey).toString(CryptoJS.enc.Utf8);
-        const studId = CryptoJS.AES.decrypt(encryptedId.replace(/-/g, "+").replace(/_/g, "/"), encryptionKey).toString(CryptoJS.enc.Utf8);
-        if (!studId || !studAct) {
-          return <h1>Invalid ID </h1>
-        } 
-  
-        const handleDivyangFileChange = (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            // Handle the file here, e.g., save it to formData or upload it
-            setFormData({
-              ...formData,        
-              student_caste_certificate: file,
-            });
+
+        useEffect(() => {
+          if (!user) {
+            // Redirect to login if user is not logged in
+            navigate("/login");
+            // Do something with user data
+            // console.log("Logged in user:", user);
           }
-        };
+          if (!token) {
+            navigate("/login");
+            // Do something with the token, like making API calls
+            console.log("Current Token:", token);
+          }
+        }, [user, token, navigate]);
 
-      const handleCasteFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          // Handle file, for example, save it in formData
-          setFormData({
-            ...formData,
-            student_caste_certificate: file,
-          });
+        useEffect(() => {
+          if (selectedStudents.aadhar && selectedStudents.aadhar.length === 12) {
+            setselectedStudents((prevState) => ({
+              ...prevState, // Preserve other properties
+              part1: selectedStudents.aadhar.substring(0, 4),
+              part2: selectedStudents.aadhar.substring(4, 8),
+              part3: selectedStudents.aadhar.substring(8, 12),
+            }));
+          }
+        }, [selectedStudents.aadhar]);   
+
+        const [loading, setLoading] = useState(true); // To track loading status
+
+    useEffect(() => {
+      const fetchDistrictData = async () => {
+        try {
+          const districtResponse = await axiosClient.get("getDistricts"); // API for fetching districts
+          setDistricts(districtResponse.data.districts); // Set districts
+
+          console.log("Districts:", districtResponse.data.districts);
+          if (districtResponse.data.success) {
+            console.log("Districts:", districtResponse.data.districts);
+            // setDistricts(response.data.districts);
+          } else {
+            console.error("Error fetching districts");
+          }
+        } catch (error) {
+          console.error("Error fetching districts:", error);
         }
       };
-  
-      const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+      fetchDistrictData();
+    }, [user]);
+
+    useEffect(() => {
+      const fetchBlockData = async () => {
+        try {
+          const blockResponse = await axiosClient.get("getBlocks"); // API for fetching districts
+          setBlocks(blockResponse.data.blocks); // Set districts
+
+          console.log("Blocks:", blockResponse.data.blocks);
+          if (blockResponse.data.success) {
+            console.log("Blocks:", blockResponse.data.blocks);
+            // setDistricts(response.data.districts);
+          } else {
+            console.error("Error fetching Blocks");
+          }
+        } catch (error) {
+          console.error("Error fetching Blocks:", error);
+        }
       };
-  
+      fetchBlockData();
+    }, [user]);
+        
+    const { encryptedAct, encryptedId } = useParams();
+    const studAct = CryptoJS.AES.decrypt(encryptedAct.replace(/-/g, "+").replace(/_/g, "/"), encryptionKey).toString(CryptoJS.enc.Utf8);
+    const studId = CryptoJS.AES.decrypt(encryptedId.replace(/-/g, "+").replace(/_/g, "/"), encryptionKey).toString(CryptoJS.enc.Utf8);
+      
+    
+        useEffect(() => {
+         
+          const school_code = user.school_code;
+          const fetchStudentData = async () => {
+            try {            
+
+              if (!studId || !studAct) {
+                return <h1>Invalid ID </h1>;
+              }
+              
+              const response = await axiosClient.post("getStudentData", {
+                studId,
+                studAct,
+                school_code,
+              });
+              if (response.data.success) {
+                setselectedStudents(response.data.student);
+              } else {
+                console.error("Student not found");
+              }
+            } catch (error) {
+              console.error("Error fetching student data:", error);
+            }finally {
+              setLoading(false); // Stop loading once the data is fetched
+            }
+      
+          };
+
+          fetchStudentData();
+        }, [studId, studAct, user.school_code]);
+
+        const handleDistrictChange = (e) => {
+          setselectedStudents({
+            ...selectedStudents,
+            present_district: e.target.value, // Update selected district
+          });
+        };
+
+        // Find the district name for the selected district code
+        const selectedDistrict = districts.find(
+          (district) => district.district_code === selectedStudents.present_district_code
+        );
+
+        const handleBlockChange = (e) => {
+          setselectedStudents({
+            ...selectedStudents,
+            present_block: e.target.value, // Update selected district
+          });
+        };
+
+        // Find the district name for the selected district code
+        const selectedBlock = blocks.find(
+          (block) => block.block_code === selectedStudents.present_block_code
+        );
+
+      
+
+        if (!studId || !studAct) {
+          return <h1>Invalid ID </h1>
+        }        
+        const FRONTEND_URL = "http://localhost:5173";  
 
     return (
       <>
@@ -97,10 +192,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
             )}
 
               
-            <div className="max-w-[1000px] mx-auto p-6 bg-white shadow-lg rounded-xl">
-            {/* <h2 className="text-center text-2xl font-semibold mb-6">Create Your Profile</h2>   */}
-            {/* <h3 className="text-lg font-semibold mb-4">Personal Details :</h3> */}
-            <div className="stud-communication">      
+            <div className="max-w-[1000px] mx-auto p-6 bg-[#bdc5bd44] shadow-lg rounded-xl">            
+            <div className="stud-personal-details">      
                 <img src={`${FRONTEND_URL}/src/assets/images/resistation-logo.png`} alt="Resistation Logo" />
                 <p>Personal Details</p>
               </div>
@@ -114,8 +207,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                 <input
                   type="text"
                   name="student_name"
-                  value={formData.student_name}
-                  onChange={handleChange}
+                  value={selectedStudents.student_name}
+                  // onChange={handleChange}
                   className="w-full p-2 border rounded"
                 />
                 <small className="mt-1 text-xs text-gray-500 block">Max 35 Characters</small>
@@ -126,9 +219,9 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
               <div className="w-2/3">
                 <input
                   type="date"
-                  name="student_dob"
-                  value={formData.student_dob}
-                  onChange={handleChange}
+                  name="birth_date"
+                  value={selectedStudents.birth_date}
+                  // onChange={handleChange}
                   className="w-full p-2 border rounded"
                 />
               </div>
@@ -141,8 +234,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     type="radio"
                     name="student_gender"
                     value="M"
-                    checked={formData.student_gender === "M"}
-                    onChange={handleChange}
+                    checked={selectedStudents.student_gender === "M"}
+                    // onChange={handleChange}
                     className="mr-2"
                   />
                   Male
@@ -152,8 +245,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     type="radio"
                     name="student_gender"
                     value="F"
-                    checked={formData.student_gender === "F"}
-                    onChange={handleChange}
+                    checked={selectedStudents.student_gender === "F"}
+                    // onChange={handleChange}
                     className="mr-2"
                   />
                   Female
@@ -172,8 +265,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                       type="radio"
                       name="student_disability"
                       value={type}
-                      checked={formData.student_disability === type}
-                      onChange={handleChange}
+                      checked={selectedStudents.student_disability === type}
+                      // onChange={handleChange}
                       className="mr-2"
                     />
                     {type}
@@ -183,14 +276,14 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
             </div>
 
             {/* Conditional Rendering for Divyang Certificate */}
-            {formData.student_disability !== "NONE" && (
+            {selectedStudents.student_disability !== "NONE" && (
               <div className="flex items-start space-x-4 mt-4">
                 <label className="w-1/3 text-base font-medium">Divyang Certificate :</label>
                 <div className="w-2/3">
                   <input
                     type="file"
                     name="student_divyang_certificate"
-                    onChange={handleDivyangFileChange}
+                    // onChange={handleDivyangFileChange}
                     className="w-full p-2 border rounded"
                   />
                 </div>
@@ -209,8 +302,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                       type="radio"
                       name="student_caste"
                       value={caste}
-                      checked={formData.student_caste === caste}
-                      onChange={handleChange}
+                      checked={selectedStudents.student_caste === caste}
+                      // onChange={handleChange}
                       className="mr-2"
                     />
                     {caste}
@@ -220,14 +313,14 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
             </div>
 
             {/* Conditional Rendering for Caste Certificate */}
-            {formData.student_caste !== "GENERAL" && (
+            {selectedStudents.student_caste !== "GENERAL" && (
               <div className="flex items-start space-x-4 mt-4">
                 <label className="w-1/3 text-base font-medium">Caste Certificate :</label>
                 <div className="w-2/3">
                   <input
                     type="file"
                     name="student_caste_certificate"
-                    onChange={handleCasteFileChange}
+                    // onChange={handleCasteFileChange}
                     className="w-full p-2 border rounded"
                   />
                 </div>
@@ -245,8 +338,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                       type="radio"
                       name="student_religion"
                       value={religion}
-                      checked={formData.student_religion === religion}
-                      onChange={handleChange}
+                      checked={selectedStudents.student_religion === religion}
+                      // onChange={handleChange}
                       className="mr-2"
                     />
                     {religion}
@@ -266,8 +359,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                       type="radio"
                       name="student_nationality"
                       value={nationality}
-                      checked={formData.student_nationality === nationality}
-                      onChange={handleChange}
+                      checked={selectedStudents.student_nationality === nationality}
+                      // onChange={handleChange}
                       className="mr-2"
                     />
                     {nationality}
@@ -290,8 +383,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     id="aadhar-part1"
                     type="text"
                     maxLength="4"
-                    value={aadhar.part1}
-                    onChange={(e) => handleAadharChange(e, "part1")}
+                    value={selectedStudents.part1}
+                    // onChange={(e) => handleAadharChange(e, "part1")}
                     className="w-50 p-2 border rounded text-center"
                   />
                   <small className="mt-1 text-xs text-gray-500">Max 4 Characters</small>
@@ -303,8 +396,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     id="aadhar-part2"
                     type="text"
                     maxLength="4"
-                    value={aadhar.part2}
-                    onChange={(e) => handleAadharChange(e, "part2")}
+                    value={selectedStudents.part2}
+                    // onChange={(e) => handleAadharChange(e, "part2")}
                     className="w-50 p-2 border rounded text-center"
                   />
                   <small className="mt-1 text-xs text-gray-500">Max 4 Characters</small>
@@ -316,8 +409,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     id="aadhar-part3"
                     type="text"
                     maxLength="4"
-                    value={aadhar.part3}
-                    onChange={(e) => handleAadharChange(e, "part3")}
+                    value={selectedStudents.part3}
+                    // onChange={(e) => handleAadharChange(e, "part3")}
                     className="w-50 p-2 border rounded text-center"
                   />
                   <small className="mt-1 text-xs text-gray-500">Max 4 Characters</small>
@@ -333,8 +426,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     type="radio"
                     name="student_area"
                     value="RURAL"
-                    checked={formData.student_area === "RURAL"}
-                    onChange={handleChange}
+                    checked={selectedStudents.student_area === "RURAL"}
+                    // onChange={handleChange}
                     className="mr-2"
                   />
                   RURAL
@@ -344,8 +437,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     type="radio"
                     name="student_area"
                     value="URBAN"
-                    checked={formData.student_area === "URBAN"}
-                    onChange={handleChange}
+                    checked={selectedStudents.student_area === "URBAN"}
+                    // onChange={handleChange}
                     className="mr-2"
                   />
                   URBAN
@@ -359,8 +452,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                 <input
                   type="text"
                   name="father_name"
-                  value={formData.father_name}
-                  onChange={handleChange}
+                  value={selectedStudents.father_name}
+                  // onChange={handleChange}
                   className="w-full p-2 border rounded"
                 />
                 <small className="mt-1 text-xs text-gray-500 block">Max 35 Characters</small>
@@ -373,8 +466,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                 <input
                   type="text"
                   name="mother_name"
-                  value={formData.mother_name}
-                  onChange={handleChange}
+                  value={selectedStudents.mother_name}
+                  // onChange={handleChange}
                   className="w-full p-2 border rounded"
                 />
                 <small className="mt-1 text-xs text-gray-500 block">Max 35 Characters</small>
@@ -389,8 +482,8 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     type="radio"
                     name="student_category"
                     value="REGULAR"
-                    checked={formData.student_category === "REGULAR"}
-                    onChange={handleChange}
+                    checked={selectedStudents.student_category === "REGULAR"}
+                    // onChange={handleChange}
                     className="mr-2"
                   />
                   REGULAR
@@ -400,20 +493,335 @@ const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in Co
                     type="radio"
                     name="student_category"
                     value="PRIVATE"
-                    checked={formData.student_category === "PRIVATE"}
-                    onChange={handleChange}
+                    checked={selectedStudents.student_category === "PRIVATE"}
+                    // onChange={handleChange}
                     className="mr-2"
                   />
                   PRIVATE
                     </label>
                 </div>
+              </div>              
+            </div>
+            <div className="max-w-[1000px] mx-auto p-6  "></div>
+            <div className="stud-personal-details">      
+                <img src={`${FRONTEND_URL}/src/assets/images/resistation-logo.png`} alt="Resistation Logo" />
+                <p>Communication Details</p>
+            </div>
+            <div className="space-y-4">
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-6 font-medium">13. Address Line 1 :<span className="required-field"></span></label>
+              <div className="w-2/3">
+                <input
+                  type="text"
+                  name="address_line1"
+                  value={selectedStudents.address_line1}
+                  // onChange={handleChange}
+                  className="w-full mt-4 p-2 border rounded"
+                />
+                <small className="mt-1 text-xs text-gray-500 block">Max 45 Characters</small>
               </div>
-               
+            </div>
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">14. Address Line 2 :<span className="required-field"></span></label>
+              <div className="w-2/3">
+                <input
+                  type="text"
+                  name="address_line2"
+                  value={selectedStudents.address_line2}
+                  // onChange={handleChange}
+                  className="w-full  p-2 border rounded"
+                />
+                <small className="mt-1 text-xs text-gray-500 block">Max 45 Characters</small>
+              </div>
+            </div>
+
+            {/* <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">15. Block :<span className="required-field"></span></label>
+              <div className="w-2/3">                
+                <select
+                  name="present_block"
+                  value={selectedStudents.present_block}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded">
+                  <option value="0">Select Block</option>
+                  <option value="1">Block 1</option>
+                  <option value="2">Block 2</option>
+                  <option value="3">Block 3</option>
+                  </select>
+
+                <small className="mt-1 text-xs text-gray-500 block">Max 45 Characters</small>
+              </div>
+            </div> */}
+
+              <div className="flex items-start space-x-4">
+                <label className="w-1/3 text-base mt-2 font-medium">
+                15. Block :<span className="required-field"></span>
+                </label>
+                <div className="w-2/3">
+                  {loading ? (
+                    <p>Loading...</p>
+                  ) : (
+                    <select
+                      name="present_block"
+                      value={selectedStudents.present_block_code}
+                      onChange={handleBlockChange}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">Select Block</option>
+                      {blocks.map((block) => (
+                        <option
+                          key={block.block_code}
+                          value={block.block_code}
+                        >
+                          {block.block_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Optionally display selected district name */}
+                {selectedBlock && (
+                  <div className="mt-2">
+                    <p>Selected block: {selectedBlock.block_name}</p>
+                  </div>
+                )}
+              </div>
+
+            {/* <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">16. District :<span className="required-field"></span></label>
+              <div className="w-2/3">                
+                <select
+                  name="present_district"
+                  value={selectedStudents.present_district}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded">
+                  <option value="0">Select District</option>
+                  <option value="1">District 1</option>
+                  <option value="2">District 2</option>
+                  <option value="3">District 3</option>
+                  </select>
+
+                <small className="mt-1 text-xs text-gray-500 block">Max 45 Characters</small>
+              </div>
+            </div> */}
+
+          <div className="flex items-start space-x-4">
+                <label className="w-1/3 text-base mt-2 font-medium">
+                  16. District :<span className="required-field"></span>
+                </label>
+                <div className="w-2/3">
+                  {loading ? (
+                    <p>Loading...</p>
+                  ) : (
+                    <select
+                      name="present_district"
+                      value={selectedStudents.present_district_code}
+                      onChange={handleDistrictChange}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">Select District</option>
+                      {districts.map((district) => (
+                        <option
+                          key={district.district_code}
+                          value={district.district_code}
+                        >
+                          {district.district_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+      {/* Optionally display selected district name */}
+      {selectedDistrict && (
+        <div className="mt-2">
+          <p>Selected District: {selectedDistrict.district_name}</p>
+        </div>
+      )}
+    </div>
+
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">17. State/Union Territory :<span className="required-field"></span></label>
+              <div className="w-2/3">                
+                <select
+                  name="present_state"
+                  value={selectedStudents.present_state}
+                  // onChange={handleChange}
+                  className="w-full p-2 border rounded">
+                  <option value="0">Select State</option>
+                  <option value="1">State 1</option>
+                  <option value="2">State 2</option>
+                  <option value="3">State 3</option>
+                  </select>               
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">18. Pin :<span className="required-field"></span></label>
+              <div className="w-2/3">
+                <input
+                  type="text"
+                  name="present_pin"
+                  value={selectedStudents.present_pin}
+                  // onChange={handleChange}
+                  className="w-full  p-2 border rounded"
+                />
+                <small className="mt-1 text-xs text-gray-500 block">Max 6 Characters</small>
+              </div>
+            </div>
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">19. Contact Mobile No :<span className="required-field"></span></label>
+              <div className="w-2/3">
+                <input
+                  type="text"
+                  name="mobile_no"
+                  value={selectedStudents.mobile_no}
+                  // onChange={handleChange}
+                  className="w-full  p-2 border rounded"
+                />
+                <small className="mt-1 text-xs text-gray-500 block">Max 10 Characters</small>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">20. Email Id :<span className="required-field"></span></label>
+              <div className="w-2/3">
+                <input
+                  type="email"
+                  name="student_email"
+                  value={selectedStudents.student_email}
+                  // onChange={handleChange}
+                  className="w-full  p-2 border rounded"
+                />
+                <small className="mt-1 text-xs text-gray-500 block">Max 50 Characters</small>
+              </div>
+            </div>
+            </div>
+
+            <div className="max-w-[1000px] mx-auto p-6 bg-[#bdc5bd44]"></div>
+            <div className="stud-education-details">      
+                <img src={`${FRONTEND_URL}/src/assets/images/resistation-logo.png`} alt="Resistation Logo" />
+                <p>Education Details</p>
+            </div>
+            <div className="space-y-4">
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-6 font-medium">21. Class Roll No :<span className="required-field"></span></label>
+              <div className="w-2/3">
+                <input
+                  type="text"
+                  name="roll_number"
+                  value={selectedStudents.roll_number}
+                  // onChange={handleChange}
+                  className="w-full mt-4 p-2 border rounded"
+                />
+                <small className="mt-1 text-xs text-gray-500 block">Max 4 Characters</small>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">22. Section :<span className="required-field"></span></label>
+              <div className="w-2/3">
+                <input
+                  type="text"
+                  name="section"
+                  value={selectedStudents.section}
+                  // onChange={handleChange}
+                  className="w-full  p-2 border rounded"
+                />
+                <small className="mt-1 text-xs text-gray-500 block">Max 1 Characters</small>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">
+                23. Medium of Examination :<span className="required-field"></span>
+              </label>
+              <div className="w-2/3 flex space-x-4">
+                {["HINDI", "URDU", "ENGLISH", "BENGALI", "ORIYA"].map((medium) => (
+                  <label key={medium} className="flex items-center mt-2">
+                    <input
+                      type="radio"
+                      name="student_medium"
+                      value={medium}
+                      checked={selectedStudents.student_medium === medium}
+                      // onChange={handleChange}
+                      className="mr-2"
+                    />
+                    {medium}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <label className="w-1/3 text-base mt-2 font-medium">24. Subject Offered :<span className="required-field"></span></label>
+              {/* <div className="w-2/3">                
+                <select
+                  name="subject_mil_code"
+                  value={selectedStudents.subject_mil_code}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded">
+                  <option value="0">CHOOSE ONE</option>
+                  <option value="1">Subject  1</option>
+                  <option value="2">Subject 2</option>
+                  <option value="3">Subject 3</option>
+                  </select>               
+              </div> */}
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <label className="w-half ml-10 mr-40 text-base mt-2 font-medium">Language One :<span className="required-field"></span></label>
+              <div className="w-2/3">                
+                <select
+                  name="subject_mil_code"
+                  value={selectedStudents.subject_mil_code}
+                  // onChange={handleChange}
+                  className="w-full p-2 border rounded">
+                  <option value="0">CHOOSE ONE</option>
+                  <option value="1">Subject  1</option>
+                  <option value="2">Subject 2</option>
+                  <option value="3">Subject 3</option>
+                  </select>               
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <label className="w-half ml-10 mr-40 text-base mt-2 font-medium">Language Two :<span className="required-field"></span></label>
+              <div className="w-2/3">                
+                <select
+                  name="subject_lieu_code"
+                  value={selectedStudents.subject_lieu_code}
+                  // onChange={handleChange}
+                  className="w-full p-2 border rounded">
+                  <option value="0">CHOOSE ONE</option>
+                  <option value="1">Subject  1</option>
+                  <option value="2">Subject 2</option>
+                  <option value="3">Subject 3</option>
+                  </select>               
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <label className="w-half ml-10 mr-48 text-base mt-2 font-medium">Additional :<span className="required-field"></span></label>
+              <div className="w-2/3">                
+                <select
+                  name="subject_elective_code"
+                  value={selectedStudents.subject_elective_code}
+                  // onChange={handleChange}
+                  className="w-full p-2 border rounded">
+                  <option value="0">CHOOSE ONE</option>
+                  <option value="1">Subject  1</option>
+                  <option value="2">Subject 2</option>
+                  <option value="3">Subject 3</option>
+                  </select>               
+              </div>
+            </div>
             </div>
             
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-6">
-              <button className="text-green-500">&lt; Previous</button>
+              <button className="text-green-500">&lt; </button>
               <button className="bg-green-500 text-white px-6 py-2 rounded">Next &gt;</button>
             </div>
           </div>

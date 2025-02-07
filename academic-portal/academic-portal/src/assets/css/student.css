@@ -3,6 +3,14 @@
     color: red;
   }
   
-.stud-communication {padding-top: 0;border-bottom: solid 2px #217ed6}
-.stud-communication img {display: inline-block;}
-.stud-communication p {font-size: 24px;display: inline-block; margin-left:20px;font-family: 'Roboto',sans-serif;color: #03335f;}
+.stud-personal-details {padding-top: 0;border-bottom: solid 2px #217ed6}
+.stud-personal-details img {display: inline-block;}
+.stud-personal-details p {font-size: 24px;display: inline-block; margin-left:20px;font-family: 'Roboto',sans-serif;color: #03335f;}
+
+.stud-communication-details {padding-top: 0;border-bottom: solid 2px #217ed6}
+.stud-communication-details img {display: inline-block;}
+.stud-communication-details p {font-size: 24px;display: inline-block; margin-left:20px;font-family: 'Roboto',sans-serif;color: #03335f;}
+
+.stud-education-details {padding-top: 0;border-bottom: solid 2px #217ed6}
+.stud-education-details img {display: inline-block;}
+.stud-education-details p {font-size: 24px;display: inline-block; margin-left:20px;font-family: 'Roboto',sans-serif;color: #03335f;}
