@@ -6,6 +6,9 @@ import axiosClient from "../axiosClient";
 const encryptionKey = import.meta.env.VITE_APP_KEY; // Use the same key as in ContextProvider
 import { useStateContext } from "../contexts/contextprovider";
 
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+
 //  alert(user);
 
 function Student() {
@@ -241,13 +244,20 @@ function Student() {
                                 <span className="required-field"></span>
                             </label>
                             <div className="w-2/3">
-                                <input
-                                    type="text"
-                                    name="student_name"
-                                    value={selectedStudents.student_name}
-                                    onChange={handleChange}
-                                    className="w-full p-2 border rounded"
-                                />
+                               
+
+                            {loading ? (
+                                    <Skeleton height={40} />
+                                    ) : (
+                                        <input
+                                        type="text"
+                                        name="student_name"
+                                        value={selectedStudents.student_name}
+                                        onChange={handleChange}
+                                        className="w-full p-2 border rounded"
+                                    />
+                                    )}
+
                                 <small className="mt-1 text-xs text-gray-500 block">
                                     Max 35 Characters
                                 </small>

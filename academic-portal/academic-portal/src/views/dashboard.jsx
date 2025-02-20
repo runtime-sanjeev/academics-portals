@@ -31,7 +31,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const [deleteId, setDeleteId] = useState(null);
   const sanitizeForUrl = (str) => str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-
+ 
 
   useEffect(() => {
     if (!user) {
@@ -57,8 +57,6 @@ const handleEdit = (id, act ) => {
   const urlSafeEncryptedId = sanitizeForUrl(encryptedId);
   const encryptedAct = CryptoJS.AES.encrypt(act.toString(), encryptionKey).toString();  
   const urlSafeEncryptedAct = sanitizeForUrl(encryptedAct);
-
-
   navigate(`/student/${urlSafeEncryptedAct}/${urlSafeEncryptedId}`);
 };
 
@@ -79,18 +77,15 @@ const handleEdit = (id, act ) => {
     if (user?.school_code) {
       // const controller = new AbortController(); // Prevent memory leaks
       let isMounted = true;
-
       axiosClient.post('getCounts', { school_code: user.school_code })
         .then(response => {
           // console.log("API Response:", response.data);
           if (isMounted) {
             const totalCounts = response.data.studentCounts.total;
             const processedCounts = response.data.studentCounts.processed;
-
             setCountsReg(totalCounts.REGULAR || 0);
             setCountsPvt(totalCounts.PRIVATE || 0);
             setCountsExReg(totalCounts["EX-REGULAR"] || 0);
-
             setchallanCountsReg(processedCounts.REGULAR.processed || 0);
             setchallanCountsPvt(processedCounts.PRIVATE.processed || 0);
             setchallanCountsExReg(processedCounts["EX-REGULAR"].processed || 0);
