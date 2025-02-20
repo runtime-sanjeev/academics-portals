@@ -8,6 +8,7 @@ use App\Http\Controllers\GetStudentController;
 use App\Http\Controllers\GetExistingStudentController;
 use App\Http\Controllers\GetDistrictsController;
 use App\Http\Controllers\GetBlockController;
+use App\Http\Controllers\SubjectController;
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('getCounts', [DashboardController::class, 'studentCounts']); 
@@ -18,6 +19,11 @@ Route::delete('/student/delete/{id}', [StudentController::class, 'deleteStudent'
 Route::post('getStudentData', [GetExistingStudentController::class, 'getStudentData']);
 Route::get('getDistricts', [GetDistrictsController::class, 'getDistricts']);
 Route::get('getBlocks', [GetBlockController::class, 'getBlocks']);
+Route::get('subjects', [SubjectController::class, 'getSubjects']);
+
+
+// Route::get('/subjects/{category}', [SubjectController::class, 'getSubjects']);
+
 
 // Route::post('/student/create', [StudentController::class, 'createStudent'])->name('student.create');
 // Route::put('/student/update/{id}', [StudentController::class, 'updateStudent'])->name('student.update');

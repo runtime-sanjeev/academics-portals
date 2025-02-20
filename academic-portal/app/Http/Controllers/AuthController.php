@@ -4,14 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests\LoginRequest;
-// use App\Http\Requests\LogoutRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use Illuminate\Support\Facades\Cookie;
+
 class AuthController extends Controller
 {
-
     /*   Login Start   */
 
     public function login(LoginRequest $request)
@@ -27,12 +25,9 @@ class AuthController extends Controller
 
         // Handle the first-time login scenario (when `pass` field is blank)
         if (empty($user->pass)) {
-            // Check if the provided password matches the plain text password in the database
             if ($data['password'] !== $user->password) {
                 return response()->json(['error' => 'Invalid credentials. Please try again!'], 422);
             }
-
-            // Hash and store the password in the `pass` field for future logins
             $user->pass = Hash::make($data['password']);
             $user->save();
         }
@@ -56,12 +51,6 @@ class AuthController extends Controller
         $user->attempt = 1;
         $user->save();
 
-        // Authenticate the user
-        $credentials = [
-            'school_code' => $data['school_code'],
-            'password' => $data['password'],
-        ];
-
         // Generate a token for the user
         $token = $user->createToken('main')->plainTextToken;
 
@@ -73,15 +62,13 @@ class AuthController extends Controller
         ]);
     }
     
- /*   Login End   */
+    /*   Login End   */
 
     /*   Logout Start */
 
-    public function logout(Request $request){
-        $user = $request->user();
-        $user->currentAccessToken()->delete();
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out successfully'], 200);
     }
 }
-
-

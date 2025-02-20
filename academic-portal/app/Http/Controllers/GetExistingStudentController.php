@@ -10,18 +10,18 @@ class GetExistingStudentController extends Controller
     public function getStudentData(Request $request)
     {
         // Validate request input
-        $request->validate([
+        $validated = $request->validate([
             'school_code' => 'required|string',
             'studId' => 'required|integer'
         ]);
 
         // Log the request data
-        \Log::info('Request Data:', $request->all());
+        \Log::info('Request Data:', $validated);
 
         // Fetch student data
         $student = Student::where('processed', 'N')
-            ->where('school_code', $request->school_code)
-            ->find($request->studId); // `find` is better when querying by `id`
+            ->where('school_code', $validated['school_code'])
+            ->find($validated['studId']); // `find` is better when querying by `id`
 
         if ($student) {
             return response()->json([

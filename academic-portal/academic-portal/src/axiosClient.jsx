@@ -3,13 +3,13 @@ import axios from "axios";
 const axiosClient = axios.create({
   baseURL: "http://localhost:8000/api",
   headers: {
-    "Content-Type": "application/json", // Ensure JSON format
+    "Content-Type": "application/json",
   },
 });
 
 // Request Interceptor: Attach Token from sessionStorage
 axiosClient.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem("ACCESS_TOKEN"); // Get token from sessionStorage
+  const token = sessionStorage.getItem("ACCESS_TOKEN");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -18,21 +18,19 @@ axiosClient.interceptors.request.use((config) => {
 
 // Response Interceptor: Handle API Errors
 axiosClient.interceptors.response.use(
-  (response) => response, // Pass successful response directly
+  (response) => response,
   (error) => {
     const { response } = error;
 
     if (response) {
       if (response.status === 401) {
-        // Token expired or unauthorized access
-        sessionStorage.removeItem("ACCESS_TOKEN"); // Remove token from sessionStorage
+        sessionStorage.removeItem("ACCESS_TOKEN");
 
-        // If a logout function is provided, call it
         if (typeof window.handleLogout === "function") {
           window.handleLogout();
         } else {
           console.warn("handleLogout function is not defined.");
-          window.location.href = "/login"; // Fallback: Redirect to login
+          window.location.href = "/login";
         }
       } else {
         console.error(`API Error (${response.status}):`, response.data);
@@ -41,7 +39,7 @@ axiosClient.interceptors.response.use(
       console.error("Network Error: No response received", error);
     }
 
-    return Promise.reject(error); // Ensure errors are properly handled
+    return Promise.reject(error);
   }
 );
 
