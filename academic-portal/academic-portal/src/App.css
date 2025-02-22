@@ -1,1 +1,13 @@
 @import "tailwindcss";
+@keyframes wave {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.animate-wave {
+    animation: wave 1.5s infinite linear;
+}

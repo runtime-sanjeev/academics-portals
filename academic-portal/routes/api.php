@@ -9,6 +9,7 @@ use App\Http\Controllers\GetExistingStudentController;
 use App\Http\Controllers\GetDistrictsController;
 use App\Http\Controllers\GetBlockController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\GetStateController;
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('getCounts', [DashboardController::class, 'studentCounts']); 
@@ -20,6 +21,7 @@ Route::post('getStudentData', [GetExistingStudentController::class, 'getStudentD
 Route::get('getDistricts', [GetDistrictsController::class, 'getDistricts']);
 Route::get('getBlocks', [GetBlockController::class, 'getBlocks']);
 Route::get('subjects', [SubjectController::class, 'getSubjects']);
+Route::get('getStates', [GetStateController::class, 'getStates']);
 
 
 // Route::get('/subjects/{category}', [SubjectController::class, 'getSubjects']);

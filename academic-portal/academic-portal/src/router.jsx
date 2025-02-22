@@ -4,6 +4,7 @@ import Student from './views/student';
 import Dashboard from './views/dashboard';
 import DefaultLayout from './components/DefaultLayout';
 import GuestLayouts from './components/GuestLayouts';
+import StudentPhoto from './views/studentphoto';
 
 
 
@@ -19,6 +20,11 @@ const router = createBrowserRouter([
                 {
                     path: '/student/:encryptedId/:encryptedAct',
                     element: <Student />
+                },
+                
+                {
+                    path: '/studentphoto/:encryptedId/:encryptedAct',
+                    element: <StudentPhoto />
                 },
                 
         ]      
